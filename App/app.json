@@ -9,7 +9,21 @@
     "experiments": {
       "tsconfigPaths": true
     },
-    "plugins": [],
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "buildToolsVersion": "35.0.0"
+          },
+          "ios": {
+            "deploymentTarget": "17.0"
+          }
+        }
+      ]
+    ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -22,13 +36,26 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.notaroomba.synapsedev",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Camera access is required to capture object images for 3D scanning.",
+        "NSPhotoLibraryUsageDescription": "Access to the photo library is used to load or save images related to object capture sessions.",
+        "NSPhotoLibraryAddUsageDescription": "Used to save captured images during object capture sessions.",
+        "NSMicrophoneUsageDescription": "Microphone access may be used for recording audio during capture sessions.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.notaroomba.synapsedev",
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO"
+      ]
     },
     "extra": {
       "eas": {

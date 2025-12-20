@@ -1,6 +1,6 @@
-use futures_util::{SinkExt, StreamExt};
+use futures_util::{ SinkExt, StreamExt };
 use std::error::Error;
-use tokio_tungstenite::tungstenite::{Message, Error as WsError};
+use tokio_tungstenite::tungstenite::{ Message, Error as WsError };
 use tokio_tungstenite::accept_async;
 
 use tokio::net::TcpListener;
@@ -17,8 +17,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
             if let Err(e) = handle_connection(stream).await {
                 // Ignore common client-side connection resets that don't perform a close handshake
                 let is_ignored = match &e {
-                    WsError::Protocol(p) => format!("{}", p).contains("Connection reset without closing handshake"),
-                    WsError::Io(io_err) if io_err.kind() == std::io::ErrorKind::ConnectionReset => true,
+                    WsError::Protocol(p) =>
+                        format!("{}", p).contains("Connection reset without closing handshake"),
+                    WsError::Io(io_err) if io_err.kind() == std::io::ErrorKind::ConnectionReset =>
+                        true,
                     _ => false,
                 };
 
