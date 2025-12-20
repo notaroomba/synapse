@@ -11,9 +11,8 @@ async def handler(websocket):
         await websocket.send("ACK")
 
 async def main():
-    async with websockets.serve(handler, "0.0.0.0", 8080):
-        print("WebSocket server running on port 8080")
+    async with websockets.serve(handler, "0.0.0.0", 8081):
+        print("WebSocket server running on port 8081")
         await asyncio.Future()  # keep alive
 
 asyncio.run(main())
-//python -m pip install websockets

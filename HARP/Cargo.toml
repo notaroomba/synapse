@@ -1,0 +1,13 @@
+[package]
+name = "harp"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+# WebSocket support built on top of tokio + tungstenite
+tokio-tungstenite = "0.28.0"
+# Utilities for Stream/Sink combinators
+futures-util = "0.3"
+url = "2.5.7"
