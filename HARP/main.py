@@ -24,11 +24,11 @@ def parse_unity_line(line: str) -> dict | None:
 
 
 def unity_to_so101_action(msg: dict, robot=None) -> dict:
-    """Map incoming Unity 0-360 values to the robot's motor range (in degrees when possible).
+    """Map incoming Unity 0-180 values to the robot's motor range (in degrees when possible).
 
-    If `robot` is provided and has calibration, map 0->motor_min and 360->motor_max (in the robot's
+    If `robot` is provided and has calibration, map 0->motor_min and 180->motor_max (in the robot's
     normalized units, e.g., degrees when `use_degrees=True`). Otherwise fall back to mapping to
-    [-180, 180] (so 0->-180, 180->0, 360->+180).
+    [0, 180].
     """
     # Use robot default motor names when available (e.g. those in harp_arm.json). If `robot` is None
     # fall back to a sensible set.
@@ -90,8 +90,8 @@ def unity_to_so101_action(msg: dict, robot=None) -> dict:
             # Clamp mapped to [deg_min, deg_max]
             mapped = max(min(mapped, max(deg_min, deg_max)), min(deg_min, deg_max))
 
-            # Additionally clamp to global safe range [-180, 180]
-            mapped = max(-180.0, min(180.0, mapped))
+            # Additionally clamp to global safe range [0, 180]
+            mapped = max(0.0, min(180.0, mapped))
 
             action[f"{motor}.pos"] = mapped
 
