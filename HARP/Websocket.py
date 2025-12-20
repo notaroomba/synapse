@@ -16,3 +16,4 @@ async def main():
         await asyncio.Future()  # keep alive
 
 asyncio.run(main())
+//python -m pip install websockets
