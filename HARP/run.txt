@@ -1,0 +1,16 @@
+lerobot-record \
+    --robot.type=so101_follower \
+    --robot.port=/dev/ttyACM1 \
+    --robot.id=follower \
+    --robot.cameras="{wrist: {type: opencv, index_or_path: 1, width: 640, height: 480, fps: 30}, side: {type: opencv, index_or_path: 8, width: 640, height: 480, fps: 30}, top: {type: opencv, index_or_path: 6, width: 640, height: 480, fps: 30}}" \
+    --teleop.type=so101_leader \
+    --teleop.port=/dev/ttyACM2 \
+    --teleop.id=leader \
+    --display_data=true \
+    --dataset.repo_id=${HF_USER}/synapse \
+    --dataset.num_episodes=50 \
+    --dataset.episode_time_s=15 \
+    --dataset.reset_time_s=5 \
+    --dataset.single_task="pick up a green cyst" \
+    --dataset.root=outputs/dataset \
+    --robot.calibration_dir=calibrations

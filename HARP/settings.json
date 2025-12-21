@@ -1,0 +1,10 @@
+{
+  "follower_port": "/dev/ttyACM1",
+  "leader_port": "/dev/ttyACM2",
+  "cameras": {
+    "wrist": 1,
+    "side": 8,
+    "top": 6
+  },
+  "calibrations_dir": "calibrations"
+}
