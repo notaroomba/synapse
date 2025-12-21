@@ -1,6 +1,4 @@
-**### Make a fork or copy of this repo and fill in your team submission details! ###**
-
-# AMD_Robotics_Hackathon_2025_[Project Name]
+# AMD_Robotics_Hackathon_2025_Synapse
 
 ## Team Information
 
