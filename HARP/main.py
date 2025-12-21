@@ -10,14 +10,9 @@ from lerobot.robots.so101_follower import SO101Follower, SO101FollowerConfig
 # Global robot reference (set when a handler connects)
 GLOBAL_ROBOT = None
 
-# Optional ROS2 support
-import threading
-try:
-    import rclpy
-    from std_msgs.msg import String as RosString
-except Exception:
-    rclpy = None
-    RosString = None
+# ROS2 support removed (rclpy not required)
+rclpy = None
+RosString = None
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
 
@@ -319,12 +314,7 @@ parser.add_argument("--webrtc-fps", type=int, default=int(CONFIG.get("webrtc_fps
 parser.add_argument("--webrtc-host", default="127.0.0.1", help="Host for local WebRTC signaling HTTP server (default: 127.0.0.1)")
 parser.add_argument("--webrtc-port", type=int, default=int(CONFIG.get("webrtc_port", 8082)), help="Port for local WebRTC signaling HTTP server (default: 8082)")
 
-parser.add_argument("--enable-tcp", action="store_true", help="Enable ROS TCP endpoint to receive JSON messages from Unity")
-parser.add_argument("--tcp-port", type=int, default=9090, help="Port for the TCP endpoint (default: 9090)")
-parser.add_argument("--ros-enable", dest="ros_enable", action="store_true", default=True, help="Publish incoming TCP messages to a ROS2 topic (requires rclpy). Enabled by default.")
-parser.add_argument("--no-ros", dest="ros_enable", action="store_false", help="Disable ROS2 publishing (opposite of --ros-enable)")
-parser.add_argument("--ros-topic", default="/unity", help="ROS2 topic to publish incoming JSON strings to (default: /unity)")
-parser.add_argument("--ros-node", default="harp_bridge", help="ROS2 node name (default: harp_bridge)")
+# TCP and ROS support removed; this bridge uses WebSockets only.
 args = parser.parse_args()
 
 # Local HTTP signaling server for WebRTC (hosted on localhost by default).
@@ -409,12 +399,7 @@ async def stop_webrtc_http_server(runner):
 
 
 async def main():
-    tcp_server = None
-    tcp_ros_helper = None
     webrtc_http_runner = None
-
-    if args.enable_tcp:
-        tcp_server, tcp_ros_helper = await _start_tcp_server()
 
     if args.webrtc:
         webrtc_http_runner = await start_webrtc_http_server()
@@ -431,9 +416,6 @@ async def main():
             print("WebSocket server running on port 8081 (accepting large frames, infinite keepalive)")
             await asyncio.Future()  # keep alive
     finally:
-        # Cleanup TCP server
-        if args.enable_tcp:
-            await _stop_tcp_server(tcp_server, tcp_ros_helper)
         # Stop HTTP signaling server if started
         if webrtc_http_runner is not None:
             await stop_webrtc_http_server(webrtc_http_runner)
@@ -448,121 +430,7 @@ async def main():
             logging.debug("PeerConnection cleanup failed")
 
 
-# TCP server handling for Unity/Meta Quest connections
-async def _tcp_client_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter, ros_helper=None):
-    addr = writer.get_extra_info('peername')
-    logging.info("TCP client connected: %s", addr)
-    try:
-        while True:
-            line = await reader.readline()
-            if not line:
-                break
-            try:
-                text = line.decode().strip()
-            except Exception:
-                text = None
-            if not text:
-                continue
-            try:
-                msg = json.loads(text)
-            except Exception:
-                logging.warning("Invalid JSON from TCP client %s: %s", addr, text)
-                writer.write(b"ERROR: invalid json\n")
-                await writer.drain()
-                continue
-
-            # Optionally publish to ROS
-            if ros_helper is not None:
-                ros_helper.publish(json.dumps(msg))
-
-            # If a robot is connected, map and send action
-            if GLOBAL_ROBOT is not None:
-                try:
-                    action = unity_to_so101_action(msg, GLOBAL_ROBOT)
-                    # send in thread to avoid blocking
-                    loop = asyncio.get_running_loop()
-                    await loop.run_in_executor(None, GLOBAL_ROBOT.send_action, action)
-                    writer.write(b"ACK\n")
-                    await writer.drain()
-                except Exception:
-                    logging.exception("Failed to send action from TCP message")
-                    writer.write(b"ERROR: send failed\n")
-                    await writer.drain()
-            else:
-                writer.write(b"IGNORED: no robot connected\n")
-                await writer.drain()
-    except asyncio.CancelledError:
-        pass
-    except Exception:
-        logging.exception("TCP client handler error")
-    finally:
-        try:
-            writer.close()
-            await writer.wait_closed()
-        except Exception:
-            pass
-        logging.info("TCP client disconnected: %s", addr)
-
-
-class ROSHelper:
-    def __init__(self, node_name: str, topic: str):
-        if rclpy is None:
-            raise RuntimeError("rclpy not available")
-        rclpy.init()
-        self.node = rclpy.create_node(node_name)
-        self.pub = self.node.create_publisher(RosString, topic, 10)
-        self._running = True
-        self._thread = threading.Thread(target=self._spin_thread, daemon=True)
-        self._thread.start()
-
-    def _spin_thread(self):
-        while self._running:
-            rclpy.spin_once(self.node, timeout_sec=0.1)
-
-    def publish(self, data: str):
-        msg = RosString()
-        msg.data = data
-        self.pub.publish(msg)
-
-    def close(self):
-        self._running = False
-        try:
-            self._thread.join(timeout=1.0)
-        except Exception:
-            pass
-        try:
-            self.node.destroy_node()
-        except Exception:
-            pass
-        try:
-            rclpy.shutdown()
-        except Exception:
-            pass
-
-
-async def _start_tcp_server():
-    ros_helper = None
-    if args.ros_enable:
-        if rclpy is None:
-            logging.error("ROS support requested but rclpy is not available")
-        else:
-            import threading
-
-            ros_helper = ROSHelper(args.ros_node, args.ros_topic)
-            logging.info("ROS helper started, publishing to %s", args.ros_topic)
-
-    server = await asyncio.start_server(lambda r, w: _tcp_client_handler(r, w, ros_helper), '0.0.0.0', args.tcp_port)
-    logging.info("TCP server listening on 0.0.0.0:%d", args.tcp_port)
-    return server, ros_helper
-
-
-async def _stop_tcp_server(server, ros_helper):
-    if server is not None:
-        server.close()
-        await server.wait_closed()
-    if ros_helper is not None:
-        ros_helper.close()
-
+# TCP and ROS functionality removed — this bridge uses WebSockets for control and (optionally) WebRTC for camera streaming.
 
 
 asyncio.run(main())
