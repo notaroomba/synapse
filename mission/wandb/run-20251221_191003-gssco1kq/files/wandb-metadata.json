@@ -1,0 +1,52 @@
+{
+  "os":  "Linux-6.1.0-39-amd64-x86_64-with-glibc2.39",
+  "python":  "CPython 3.12.3",
+  "startedAt":  "2025-12-21T19:10:03.880365Z",
+  "args":  [
+    "--policy.pretrained_path=NotARoomba/eval_synapse_smvla_5",
+    "--policy.type=smolvla",
+    "--policy.repo_id=NotARoomba/eval_synapse_smvla_5",
+    "--dataset.repo_id=NotARoomba/synapse_5",
+    "--rename_map={\"observation.images.side\": \"observation.images.camera1\", \"observation.images.top\": \"observation.images.camera2\", \"observation.images.wrist\": \"observation.images.camera3\"}",
+    "--batch_size=20",
+    "--steps=3000",
+    "--output_dir=outputs/train/eval_synapse_smvla_5",
+    "--job_name=synapse_smvla_5",
+    "--policy.device=cuda",
+    "--policy.push_to_hub=true",
+    "--wandb.enable=true"
+  ],
+  "program":  "/opt/venv/bin/lerobot-train",
+  "root":  "outputs/train/eval_synapse_smvla_5",
+  "host":  "robotics-jupyter-launcher-1669",
+  "executable":  "/opt/venv/bin/python",
+  "cpu_count":  160,
+  "cpu_count_logical":  160,
+  "gpu":  "AMD Instinct MI300X VF",
+  "gpu_count":  1,
+  "disk":  {
+    "/":  {
+      "total":  "2162185003008",
+      "used":  "926966378496"
+    }
+  },
+  "memory":  {
+    "total":  "2029207175168"
+  },
+  "gpu_amd":  [
+    {
+      "id":  "0",
+      "uniqueId":  "0x62eae37491eb3a3e",
+      "vbiosVersion":  "113-M3000100-103",
+      "performanceLevel":  "auto",
+      "maxPower":  "750.0",
+      "series":  "AMD Instinct MI300X VF",
+      "model":  "0x74b5",
+      "vendor":  "Advanced Micro Devices, Inc. [AMD/ATI]",
+      "sku":  "M3000100",
+      "sclkRange":  "500Mhz - 2100Mhz",
+      "mclkRange":  "900Mhz - 1300Mhz"
+    }
+  ],
+  "writerId":  "kluchij53q8p932fnfkcllv70laub28a"
+}

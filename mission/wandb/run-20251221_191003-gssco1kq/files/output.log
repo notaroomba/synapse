@@ -1,0 +1,92 @@
+INFO 2025-12-21 19:10:04 db_utils.py:102 [1m[34mLogs will be synced with wandb.[0m
+INFO 2025-12-21 19:10:04 db_utils.py:103 Track this run --> [1m[33mhttps://wandb.ai/notaroomba-hack-club/lerobot/runs/gssco1kq[0m
+INFO 2025-12-21 19:10:04 ot_train.py:183 Creating dataset
+stats.json: 16.1kB [00:00, 38.6MB/s]                      | 0/6 [00:00<?, ?it/s]
+info.json: 3.86kB [00:00, 13.1MB/s]                 | 0.00/2.20k [00:00<?, ?B/s]
+meta/episodes/chunk-000/file-001.parquet: 100%|█| 67.2k/67.2k [00:00<00:00, 191k
+meta/episodes/chunk-000/file-000.parquet: 100%|█| 210k/210k [00:00<00:00, 437kB/
+meta/tasks.parquet: 100%|██████████████████| 2.20k/2.20k [00:00<00:00, 3.17kB/s]
+meta/episodes/chunk-000/file-002.parquet: 100%|█| 61.1k/61.1k [00:00<00:00, 92.0
+Fetching 6 files: 100%|███████████████████████████| 6/6 [00:00<00:00,  6.36it/s]
+README.md: 4.35kB [00:00, 19.3MB/s]                      | 0/20 [00:00<?, ?it/s]
+data/chunk-000/file-000.parquet: 100%|███████| 310k/310k [00:00<00:00, 2.58MB/s]
+data/chunk-000/file-002.parquet: 100%|██████| 18.5k/18.5k [00:00<00:00, 195kB/s]
+data/chunk-000/file-001.parquet: 100%|██████| 48.4k/48.4k [00:00<00:00, 506kB/s]
+.gitattributes: 2.46kB [00:00, 6.90MB/s](…):   0%|   | 0.00/268M [00:00<?, ?B/s]
+videos/observation.images.top/chunk-000/(…): 100%|█| 9.48M/9.48M [00:00<00:00, 2
+videos/observation.images.side/chunk-000(…): 100%|█| 21.5M/21.5M [00:00<00:00, 3
+videos/observation.images.wrist/chunk-00(…): 100%|█| 13.8M/13.8M [00:00<00:00, 4
+videos/observation.images.side/chunk-000(…): 100%|█| 7.28M/7.28M [00:00<00:00, 1
+videos/observation.images.top/chunk-000/(…): 100%|█| 31.0M/31.0M [00:00<00:00, 5
+videos/observation.images.wrist/chunk-00(…): 100%|█| 3.83M/3.83M [00:00<00:00, 1
+videos/observation.images.side/chunk-000(…): 100%|█| 184M/184M [00:01<00:00, 129
+videos/observation.images.wrist/chunk-00(…): 100%|█| 113M/113M [00:01<00:00, 73.
+videos/observation.images.top/chunk-000/(…): 100%|█| 268M/268M [00:01<00:00, 153
+Fetching 20 files: 100%|████████████████████████| 20/20 [00:02<00:00,  9.43it/s]
+INFO 2025-12-21 19:10:08 ot_train.py:202 Creating policyM/184M [00:01<00:00, 174
+Traceback (most recent call last):
+  File "/opt/venv/lib/python3.12/site-packages/huggingface_hub/utils/_http.py", line 407, in hf_raise_for_status
+    response.raise_for_status()/chunk-00(…): 100%|█| 113M/113M [00:01<00:00, 78.
+Reducing the number of VLM layers to 16 ...
+  File "/opt/venv/lib/python3.12/site-packages/requests/models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 404 Client Error: Not Found for url: https://huggingface.co/NotARoomba/eval_synapse_smvla_5/resolve/main/model.safetensors
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/lerobot/src/lerobot/policies/pretrained.py", line 114, in from_pretrained
+    model_file = hf_hub_download(
+                 ^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 114, in _inner_fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.12/site-packages/huggingface_hub/file_download.py", line 1010, in hf_hub_download
+    return _hf_hub_download_to_cache_dir(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.12/site-packages/huggingface_hub/file_download.py", line 1117, in _hf_hub_download_to_cache_dir
+    _raise_on_head_call_error(head_call_error, force_download, local_files_only)
+  File "/opt/venv/lib/python3.12/site-packages/huggingface_hub/file_download.py", line 1658, in _raise_on_head_call_error
+    raise head_call_error
+  File "/opt/venv/lib/python3.12/site-packages/huggingface_hub/file_download.py", line 1546, in _get_metadata_or_catch_error
+    metadata = get_hf_file_metadata(
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 114, in _inner_fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.12/site-packages/huggingface_hub/file_download.py", line 1463, in get_hf_file_metadata
+    r = _request_wrapper(
+        ^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.12/site-packages/huggingface_hub/file_download.py", line 286, in _request_wrapper
+    response = _request_wrapper(
+               ^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.12/site-packages/huggingface_hub/file_download.py", line 310, in _request_wrapper
+    hf_raise_for_status(response)
+  File "/opt/venv/lib/python3.12/site-packages/huggingface_hub/utils/_http.py", line 457, in hf_raise_for_status
+    raise _format(RepositoryNotFoundError, message, response) from e
+huggingface_hub.errors.RepositoryNotFoundError: 404 Client Error. (Request ID: Root=1-6948461f-295ed4a60ccbdfcc6cc6bb5c;dbf54158-9b2e-4719-b6ef-863c3e3261a8)
+
+Repository Not Found for url: https://huggingface.co/NotARoomba/eval_synapse_smvla_5/resolve/main/model.safetensors.
+Please make sure you specified the correct `repo_id` and `repo_type`.
+If you are trying to access a private or gated repo, make sure you are authenticated. For more details, see https://huggingface.co/docs/huggingface_hub/authentication
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/opt/venv/bin/lerobot-train", line 7, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/workspace/lerobot/src/lerobot/scripts/lerobot_train.py", line 444, in main
+    train()
+  File "/workspace/lerobot/src/lerobot/configs/parser.py", line 233, in wrapper_inner
+    response = fn(cfg, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/lerobot/src/lerobot/scripts/lerobot_train.py", line 203, in train
+    policy = make_policy(
+             ^^^^^^^^^^^^
+  File "/workspace/lerobot/src/lerobot/policies/factory.py", line 413, in make_policy
+    policy = policy_cls.from_pretrained(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/lerobot/src/lerobot/policies/pretrained.py", line 127, in from_pretrained
+    raise FileNotFoundError(
+FileNotFoundError: model.safetensors not found on the HuggingFace Hub in NotARoomba/eval_synapse_smvla_5
