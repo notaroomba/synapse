@@ -15,6 +15,9 @@ lerobot-record \
     --dataset.root=outputs/dataset \
     --robot.calibration_dir=calibrations
 
+
+// COMMMANDS TO
+
 lerobot-record \
   --robot.type=so101_follower \
   --robot.port=/dev/ttyACM1 \
@@ -26,6 +29,19 @@ lerobot-record \
   --dataset.episode_time_s=60 \
   --dataset.num_episodes=1 \
   --policy.path=NotARoomba/eval_synapse_smvla_5   \
+  --robot.calibration_dir=calibrations
+
+lerobot-record \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM1 \
+  --robot.id=follower \
+  --robot.cameras="{wrist: {type: opencv, index_or_path: 4, width: 640, height: 480, fps: 30}, side: {type: opencv, index_or_path: 2, width: 640, height: 480, fps: 30}, top: {type: opencv, index_or_path: 6, width: 640, height: 480, fps: 30}}" \
+  --dataset.single_task="pick up a green cyst" \
+  --dataset.repo_id=NotARoomba/eval_synapse_smvla_5_v2 \
+  --dataset.root=${PWD}/eval_lerobot_dataset/ \
+  --dataset.episode_time_s=60 \
+  --dataset.num_episodes=1 \
+  --policy.path=NotARoomba/eval_synapse_smvla_5_v2   \
   --robot.calibration_dir=calibrations
 
 //  --rename_map='{"observation.images.side": "observation.images.camera1", "observation.images.top": "observation.images.camera2", "observation.images.wrist": "observation.images.camera3"}'
@@ -76,5 +92,9 @@ lerobot-edit-dataset \
     --repo_id NotARoomba/synapse_3 \
     --operation.type delete_episodes \
     --operation.episode_indices "[13, 18, 30, 31, 40, 47]"
+
+conda activate lerobot
+python main.py --webrtc --webrtc-port 8082
+
 
 

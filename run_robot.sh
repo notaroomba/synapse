@@ -1,0 +1,12 @@
+lerobot-record \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM1 \
+  --robot.id=follower \
+  --robot.cameras="{camera3: {type: opencv, index_or_path: 4, width: 640, height: 480, fps: 30}, camera1: {type: opencv, index_or_path: 2, width: 640, height: 480, fps: 30}, camera2: {type: opencv, index_or_path: 6, width: 640, height: 480, fps: 30}}" \
+  --dataset.single_task="pick up a green cyst" \
+  --dataset.repo_id=NotARoomba/eval_synapse_smvla_5 \
+  --dataset.root=${PWD}/eval_lerobot_dataset/ \
+  --dataset.episode_time_s=60 \
+  --dataset.num_episodes=1 \
+  --policy.path=NotARoomba/eval_synapse_smvla_5   \
+  --robot.calibration_dir=calibrations
