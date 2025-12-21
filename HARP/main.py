@@ -45,6 +45,16 @@ except Exception:
     # Not available; leave variables as None
     pass
 
+# Optional aiohttp for local signaling
+web = None
+try:
+    from aiohttp import web
+except Exception:
+    web = None
+
+# Track peer connections created via localhost signaling so we can clean them up on shutdown
+LOCAL_PEER_CONNS = []
+
 
 def parse_unity_line(line: str) -> dict | None:
     """Extract JSON object from a line and parse it."""
@@ -229,48 +239,14 @@ async def handler(websocket):
                 continue
 
             # Only act on headset type messages for left arm (adjust if needed)
-            # WebRTC offer handling over websocket (client sends {"type":"webrtc-offer","sdp": <offer>, "camera": <optional>})
-            if args.webrtc and isinstance(msg, dict) and msg.get("type") == "webrtc-offer":
-                if RTCPeerConnection is None or VideoStreamTrack is None or av is None:
-                    await websocket.send(json.dumps({"type": "webrtc-answer", "error": "webrtc dependencies missing"}))
-                else:
-                    try:
-                        sdp = msg.get("sdp")
-                        # Determine camera preference: explicit in message > CLI arg > settings.json camera_name > camera_index
-                        cam_name = msg.get("camera") or args.stream_camera_name or CONFIG.get("camera_name")
-                        # choose camera: robot camera preferred
-                        cam = None
-                        if cam_name and hasattr(robot, "cameras") and cam_name in robot.cameras:
-                            cam = robot.cameras[cam_name]
-                        elif cam_name and cam_name.startswith("opencv:"):
-                            idx = int(cam_name.split(":", 1)[1])
-                            cam = OpenCVCameraWrapper(idx)
-                        elif CONFIG.get("camera_index") is not None:
-                            cam_idx = int(CONFIG.get("camera_index"))
-                            cam = OpenCVCameraWrapper(cam_idx)
-                            cam_name = f"opencv:{cam_idx}"
-
-                        if cam is None:
-                            await websocket.send(json.dumps({"type": "webrtc-answer", "error": "no camera available"}))
-                        else:
-                            pc = RTCPeerConnection()
-                            track = CameraVideoTrack(cam, fps=args.webrtc_fps)
-                            pc.addTrack(track)
-
-                            offer = RTCSessionDescription(sdp=sdp, type="offer")
-                            await pc.setRemoteDescription(offer)
-                            answer = await pc.createAnswer()
-                            await pc.setLocalDescription(answer)
-
-                            # keep track of pcs to close them later
-                            if not hasattr(websocket, "peer_conns"):
-                                websocket.peer_conns = []
-                            websocket.peer_conns.append(pc)
-
-                            await websocket.send(json.dumps({"type": "webrtc-answer", "sdp": pc.localDescription.sdp}))
-                    except Exception:
-                        logging.exception("Failed to handle webrtc offer")
-                        await websocket.send(json.dumps({"type": "webrtc-answer", "error": "internal"}))
+            # NOTE: WebRTC signaling is now served on a localhost HTTP endpoint.
+            if isinstance(msg, dict) and msg.get("type") == "webrtc-offer":
+                # Inform client to use the local HTTP signaling endpoint instead of via websocket
+                await websocket.send(json.dumps({
+                    "type": "webrtc-answer",
+                    "error": "signaling moved to http",
+                    "hint": f"http://{args.webrtc_host}:{args.webrtc_port}/offer"
+                }))
                 continue
 
             if msg.get("type") != "headset" or msg.get("arm") != "left":
@@ -340,6 +316,8 @@ parser.add_argument("--port", default=DEFAULT_PORT, help=f"Serial port for the S
 parser.add_argument("--webrtc", action="store_true", help="Enable WebRTC video streaming for camera previews")
 parser.add_argument("--stream-camera-name", default=None, help="Name of the camera to stream (e.g., 'wrist' or 'opencv:0')")
 parser.add_argument("--webrtc-fps", type=int, default=int(CONFIG.get("webrtc_fps", 15)), help="Frames per second for WebRTC camera track")
+parser.add_argument("--webrtc-host", default="127.0.0.1", help="Host for local WebRTC signaling HTTP server (default: 127.0.0.1)")
+parser.add_argument("--webrtc-port", type=int, default=int(CONFIG.get("webrtc_port", 8082)), help="Port for local WebRTC signaling HTTP server (default: 8082)")
 
 parser.add_argument("--enable-tcp", action="store_true", help="Enable ROS TCP endpoint to receive JSON messages from Unity")
 parser.add_argument("--tcp-port", type=int, default=9090, help="Port for the TCP endpoint (default: 9090)")
@@ -348,6 +326,77 @@ parser.add_argument("--no-ros", dest="ros_enable", action="store_false", help="D
 parser.add_argument("--ros-topic", default="/unity", help="ROS2 topic to publish incoming JSON strings to (default: /unity)")
 parser.add_argument("--ros-node", default="harp_bridge", help="ROS2 node name (default: harp_bridge)")
 args = parser.parse_args()
+
+# Local HTTP signaling server for WebRTC (hosted on localhost by default).
+async def _webrtc_offer(request):
+    if not args.webrtc:
+        return web.json_response({"error": "webrtc disabled"}, status=403)
+    if web is None:
+        return web.json_response({"error": "aiohttp missing"}, status=500)
+    try:
+        data = await request.json()
+    except Exception:
+        return web.json_response({"error": "invalid json"}, status=400)
+    sdp = data.get("sdp")
+    cam_name = data.get("camera") or args.stream_camera_name or CONFIG.get("camera_name")
+    cam = None
+    if cam_name and GLOBAL_ROBOT is not None and hasattr(GLOBAL_ROBOT, "cameras") and cam_name in GLOBAL_ROBOT.cameras:
+        cam = GLOBAL_ROBOT.cameras[cam_name]
+    elif cam_name and isinstance(cam_name, str) and cam_name.startswith("opencv:"):
+        try:
+            idx = int(cam_name.split(":", 1)[1])
+            cam = OpenCVCameraWrapper(idx) if OpenCVCameraWrapper is not None else None
+        except Exception:
+            cam = None
+    elif CONFIG.get("camera_index") is not None:
+        cam_idx = int(CONFIG.get("camera_index"))
+        cam = OpenCVCameraWrapper(cam_idx) if OpenCVCameraWrapper is not None else None
+        cam_name = f"opencv:{cam_idx}"
+
+    if cam is None:
+        return web.json_response({"error":"no camera available"}, status=404)
+    if RTCPeerConnection is None or CameraVideoTrack is None or av is None:
+        return web.json_response({"error":"webrtc dependencies missing"}, status=500)
+    try:
+        pc = RTCPeerConnection()
+        track = CameraVideoTrack(cam, fps=args.webrtc_fps)
+        pc.addTrack(track)
+
+        offer = RTCSessionDescription(sdp=sdp, type="offer")
+        await pc.setRemoteDescription(offer)
+        answer = await pc.createAnswer()
+        await pc.setLocalDescription(answer)
+
+        LOCAL_PEER_CONNS.append(pc)
+        return web.json_response({"sdp": pc.localDescription.sdp})
+    except Exception:
+        logging.exception("Failed to handle HTTP webrtc offer")
+        return web.json_response({"error":"internal"}, status=500)
+
+async def start_webrtc_http_server():
+    if web is None:
+        logging.warning("aiohttp not available; cannot start HTTP signaling server")
+        return None
+    app = web.Application()
+    app.router.add_post("/offer", _webrtc_offer)
+    async def index(request):
+        return web.Response(text="WebRTC signaling endpoint. POST JSON {sdp, camera} to /offer", content_type='text/plain')
+    app.router.add_get("/", index)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, args.webrtc_host, args.webrtc_port)
+    await site.start()
+    logging.info("Local WebRTC signaling server running on http://%s:%s (offer -> /offer)", args.webrtc_host, args.webrtc_port)
+    return runner
+
+async def stop_webrtc_http_server(runner):
+    if runner is None:
+        return
+    try:
+        await runner.cleanup()
+        logging.info("Stopped local WebRTC signaling server")
+    except Exception:
+        logging.exception("Failed to stop WebRTC HTTP server")
 
 
 
@@ -362,9 +411,13 @@ args = parser.parse_args()
 async def main():
     tcp_server = None
     tcp_ros_helper = None
+    webrtc_http_runner = None
 
     if args.enable_tcp:
         tcp_server, tcp_ros_helper = await _start_tcp_server()
+
+    if args.webrtc:
+        webrtc_http_runner = await start_webrtc_http_server()
 
     try:
         async with websockets.serve(
@@ -381,6 +434,18 @@ async def main():
         # Cleanup TCP server
         if args.enable_tcp:
             await _stop_tcp_server(tcp_server, tcp_ros_helper)
+        # Stop HTTP signaling server if started
+        if webrtc_http_runner is not None:
+            await stop_webrtc_http_server(webrtc_http_runner)
+        # Close any local peer connections created via HTTP signaling
+        try:
+            for pc in LOCAL_PEER_CONNS:
+                try:
+                    await pc.close()
+                except Exception:
+                    logging.debug("Error closing PeerConnection")
+        except Exception:
+            logging.debug("PeerConnection cleanup failed")
 
 
 # TCP server handling for Unity/Meta Quest connections

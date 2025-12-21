@@ -2,15 +2,79 @@ lerobot-record \
     --robot.type=so101_follower \
     --robot.port=/dev/ttyACM1 \
     --robot.id=follower \
-    --robot.cameras="{wrist: {type: opencv, index_or_path: 1, width: 640, height: 480, fps: 30}, side: {type: opencv, index_or_path: 8, width: 640, height: 480, fps: 30}, top: {type: opencv, index_or_path: 6, width: 640, height: 480, fps: 30}}" \
+    --robot.cameras="{wrist: {type: opencv, index_or_path: 6, width: 640, height: 480, fps: 30}, side: {type: opencv, index_or_path: 2, width: 640, height: 480, fps: 30}, top: {type: opencv, index_or_path: 8, width: 640, height: 480, fps: 30}}" \
     --teleop.type=so101_leader \
-    --teleop.port=/dev/ttyACM2 \
+    --teleop.port=/dev/ttyACM0 \
     --teleop.id=leader \
     --display_data=true \
-    --dataset.repo_id=${HF_USER}/synapse \
-    --dataset.num_episodes=50 \
+    --dataset.repo_id=NotARoomba/synapse \
+    --dataset.num_episodes=30 \
     --dataset.episode_time_s=15 \
-    --dataset.reset_time_s=5 \
+    --dataset.reset_time_s=15 \
     --dataset.single_task="pick up a green cyst" \
     --dataset.root=outputs/dataset \
-    --robot.calibration_dir=calibrations
+    --robot.calibration_dir=calibrations \
+    --resume=true
+
+lerobot-record \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM1 \
+  --robot.id=follower \
+  --robot.cameras="{wrist: {type: opencv, index_or_path: 6, width: 640, height: 480, fps: 30}, side: {type: opencv, index_or_path: 2, width: 640, height: 480, fps: 30}, top: {type: opencv, index_or_path: 8, width: 640, height: 480, fps: 30}}" \
+  --dataset.single_task="pick up a green cyst" \
+  --dataset.repo_id=NotARoomba/eval_synapse_smvla \
+  --dataset.root=${PWD}/eval_lerobot_dataset/ \
+  --dataset.episode_time_s=60 \
+  --dataset.num_episodes=1 \
+  --policy.path=NotARoomba/synapse_smvla \
+  --rename_map='{"observation.images.side": "observation.images.camera1", "observation.images.top": "observation.images.camera2", "observation.images.wrist": "observation.images.camera3"}'
+
+lerobot-record \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM1 \
+  --robot.id=follower \
+  --robot.cameras="{wrist: {type: opencv, index_or_path: 6, width: 640, height: 480, fps: 30}, side: {type: opencv, index_or_path: 2, width: 640, height: 480, fps: 30}, top: {type: opencv, index_or_path: 8, width: 640, height: 480, fps: 30}}" \
+  --dataset.single_task="pick up a green cyst" \
+  --dataset.repo_id=NotARoomba/eval_synapse_act \
+  --dataset.root=${PWD}/eval_lerobot_dataset/ \
+  --dataset.episode_time_s=60 \
+  --dataset.num_episodes=1 \
+  --policy.path=NotARoomba/synapse_act \
+  --robot.calibration_dir=calibrations
+
+lerobot-record \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM1 \
+  --robot.id=follower \
+  --robot.cameras="{wrist: {type: opencv, index_or_path: 6, width: 640, height: 480, fps: 30}, side: {type: opencv, index_or_path: 2, width: 640, height: 480, fps: 30}, top: {type: opencv, index_or_path: 8, width: 640, height: 480, fps: 30}}" \
+  --dataset.single_task="pick up a green cyst" \
+  --dataset.repo_id=NotARoomba/eval_synapse_act_2 \
+  --dataset.root=${PWD}/eval_lerobot_dataset/ \
+  --dataset.episode_time_s=60 \
+  --dataset.num_episodes=1 \
+  --policy.path=NotARoomba/synapse_act_2 \
+  --robot.calibration_dir=calibrations
+
+  lerobot-record \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM0 \ # <- Use your port
+  --robot.id=my_blue_follower_arm \ # <- Use your robot id
+  --robot.cameras="{ front: {type: opencv, index_or_path: 8, width: 640, height: 480, fps: 30}}" \ # <- Use your cameras
+  --dataset.single_task="Grasp a lego block and put it in the bin." \ # <- Use the same task description you used in your dataset recording
+  --dataset.repo_id=${HF_USER}/eval_DATASET_NAME_test \  # <- This will be the dataset name on HF Hub
+  --dataset.episode_time_s=50 \
+  --dataset.num_episodes=10 \
+  # <- Teleop optional if you want to teleoperate in between episodes \
+  # --teleop.type=so100_leader \
+  # --teleop.port=/dev/ttyACM0 \
+  # --teleop.id=my_red_leader_arm \
+  --policy.path=HF_USER/FINETUNE_MODEL_NAME # <- Use your fine-tuned modelllllll
+
+
+lerobot-edit-dataset \
+    --repo_id NotARoomba/synapse_2 \
+    --new_repo_id NotARoomba/synapse_3_clean \
+    --operation.type delete_episodes \
+    --operation.episode_indices "[13, 18, 30, 31, 40, 47]"
+
+
